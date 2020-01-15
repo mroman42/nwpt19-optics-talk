@@ -1,0 +1,47 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{eqproof}
+
+% Package from Ralf Hinze
+
+\RequirePackage{amsmath}
+
+\makeatletter
+\newenvironment{eqproof}{%
+  % begin new pararaph
+  \par%
+  % set font of (Proof) to normal
+  \normalfont
+  % set \topsep length of trivlist
+  \topsep6\p@\@plus6\p@\relax%6\p@\@plus6\p@
+  % begin trivlist for proof
+  \trivlist%
+  \item[]\ignorespaces
+  % set \abovedisplayskip to 0pt
+  \abovedisplayskip0\p@\relax%
+  % start amsmath align without equation numbering
+  \start@align\@ne\st@rredtrue\m@ne\relax &%
+}{%
+  % end amsmath align
+  \endalign%
+  % end trivlist
+  \endtrivlist%
+  % force following content to be indented as a new paragraph
+  \@endpefalse%
+}
+
+\newenvironment{eqproof*}{\start@align\@ne\st@rredtrue\m@ne &}{\endalign}
+
+\newcommand{\qedup}{\vspace*{-1.75\baselineskip}\qedhere}
+
+\makeatother
+
+\newcommand{\eqproofhskip}{\enskip}
+
+\newcommand{\explain}[2][=]{\ensuremath{\displaybreak[0]\\ 
+ #1\eqproofhskip&\eqproofhskip\{\text{ #2 }\} \\ &}}
+% break an explanation across several lines
+\newcommand{\lexplain}[2][=]{\ensuremath{\\#1\eqproofhskip&\eqproofhskip\{\text{ #2 }}}
+\newcommand{\cexplain}[1]{\ensuremath{\\&\eqproofhskip\phantom{\{}\text{ #1 }}}
+\newcommand{\rexplain}[1]{\ensuremath{\\&\eqproofhskip\phantom{\{}\text{ #1 }\} \\ &}}
+% continue an expression
+\newcommand{\cont}{\\&\;}

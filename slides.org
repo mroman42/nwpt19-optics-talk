@@ -1,0 +1,1016 @@
+#+Title: Profunctor optics, a categorical update
+#+Subtitle: (Extended abstract)
+#+Date: September 5, 2019
+#+beamer_header: \institute{\small\textsc{\textbf{NWPT'19}, Taltech} \\ \vspace*{0.5cm} \hspace*{9.5cm} \includegraphics[width=1.2cm]{./images/taltech.png}}
+#+beamer_header: \author{\textit{Mario Román}, Bryce Clarke, Fosco Loregian, Emily Pillmore,\\ Derek Elkins, Bartosz Milewski and Jeremy Gibbons}
+
+** Header                                                                                  :ignore:
+#+Options: H:2 toc:nil tasks:nil
+#+Language: en
+
+*** Beamer                                                                                :ignore:
+#+latex_class: beamer
+#+latex_class_options: [usenames,dvipsnames,8pt,mathserif,spanish]
+#+latex_cmd: xelatex
+#+latex_header: \usepackage[english]{babel}
+#+beamer_theme: metropolis [titleformat section=smallcaps,sectionpage=none,numbering=none,progressbar=none,block=fill]
+#+beamer_header: \usepackage{textpos}
+
+*** Inputenc, fontenc                                                                     :ignore:
+#+latex_header: \usepackage[T1]{fontenc}
+#+latex_header: \usepackage{CJKutf8}\usepackage[utf8]{inputenc} 
+#+latex_header: \newcommand{\hirayo}{\text{\usefont{U}{min}{m}{n}\symbol{'210}}} \DeclareFontFamily{U}{min}{} \DeclareFontShape{U}{min}{m}{n}{<-> udmj30}{}
+
+*** Show notes on second screen                                                           :ignore:
+#+beamer_header: \usepackage{pgfpages}
+#+beamer_header: \setbeameroption{hide notes}
+#+beamer_header: %\setbeameroption{show notes on second screen=right}
+#+beamer_header: \setbeamertemplate{note page}{\pagecolor{yellow!5}\insertnote}
+
+**** Bug in pgfpages                                                                     :ignore:
+# Hackish way to correct a bug in pgfpages https://tex.stackexchange.com/a/306662/64938
+#+beamer_header: \makeatletter 
+#+beamer_header: \renewcommand{\@makefnmark}{}
+#+beamer_header: \def\beamer@framenotesbegin{% at beginning of slide
+#+beamer_header:      \usebeamercolor[fg]{normal text}
+#+beamer_header:       \gdef\beamer@noteitems{}% 
+#+beamer_header:       \gdef\beamer@notes{}% 
+#+beamer_header: }
+#+beamer_header: \makeatother
+
+*** Bibliography                                                                          :ignore:
+#+beamer_header: \usepackage[backend=bibtex,natbib=true]{biblatex}
+#+beamer_header: \addbibresource{optics.bib}
+
+#+latex_header: \usepackage{tikz}
+#+latex_header: \usepackage{tikz-cd}
+#+latex_header: \usetikzlibrary{shapes,fit,tikzmark}
+
+#+beamer_header: \usepackage{amsthm}
+#+beamer_header: \usepackage{amsmath}
+
+*** Table of contents                                                                     :ignore:
+#+beamer_header: \setcounter{tocdepth}{1}
+#+beamer_header: \setbeamertemplate{section in toc}[sections numbered]
+
+*** Fonts                                                                                 :ignore:
+#+beamer_header: \usefonttheme{professionalfonts} 
+#+beamer_header: \usepackage{microtype}\DisableLigatures{encoding = *, family = tt*}
+#+beamer_header: \usepackage{Fira Sans} 
+#+beamer_header: \usepackage{FiraMono} 
+#+beamer_header: %\setmonofont{Iosevka}
+
+#+beamer_header: %\usepackage{fontspec} \setmonofont{Consolas}
+#+beamer_header: % \setmonofont[
+#+beamer_header: %   Contextuals={Alternate}
+#+beamer_header: % ]{Fira Code}
+
+*** Beamer colors                                                                         :ignore:
+#+beamer_header: \definecolor{accent}{HTML}{AA1352} % Taltech color
+#+beamer_header: \colorlet{darkaccent}{accent!80!white}
+#+beamer_header: \definecolor{foreground}{RGB}{0, 0, 0}
+#+beamer_header: \definecolor{background}{RGB}{255, 255, 255}
+
+#+beamer_header: \setbeamercolor{normal text}{fg=foreground, bg=background}
+#+beamer_header: \setbeamercolor{alerted text}{fg=darkaccent, bg=background}
+#+beamer_header: \setbeamercolor{example text}{fg=foreground, bg=background}
+#+beamer_header: \setbeamercolor{frametitle}{fg=background, bg=accent}
+#+beamer_header: \setbeamercolor{headtitle}{fg=background!70!accent,bg=accent!90!foreground}
+#+beamer_header: \setbeamercolor{headnav}{fg=background,bg=accent!90!foreground}
+#+beamer_header: \setbeamercolor{section in head/foot}{fg=background,bg=accent}
+*** Colors                                                                                :ignore:
+#+latex_header: \definecolor{ugrColor}{HTML}{185A77} % Title
+#+latex_header: \definecolor{ugrColor2}{HTML}{185A77} % Sections
+#+latex_header: \definecolor{redPRL}{HTML}{ad2231}
+#+latex_header: \definecolor{bluePRL}{HTML}{1790bf}
+#+latex_header: \definecolor{greenPRL}{HTML}{078f60}
+
+#+latex_header: \newcommand{\white}[1]{{\textcolor{white}{#1}}}
+
+#+latex_header: \colorlet{myred}{redPRL}
+#+latex_header: \colorlet{myblue}{bluePRL}
+#+latex_header: \newcommand{\red}[1]{{\color{myred}{{#1}}}}
+#+latex_header: \newcommand{\blue}[1]{{\color{myblue}{{#1}}}}
+#+latex_header: \newcommand{\ctypes}[1]{\color{bluePRL}{#1}}
+#+latex_header: \newcommand{\cterms}[1]{\color{redPRL}{\texttt{#1}}}
+*** Proof trees                                                                           :ignore:
+#+latex_header: \usepackage{bussproofs}
+#+latex_header: \EnableBpAbbreviations{}
+*** Minted                                                                                :ignore:
+#+latex_header_extra: \usepackage{minted}[mathescape] \usemintedstyle{colorful}
+#+latex_header_extra: \definecolor{mbg}{HTML}{e7eef1}
+#+latex_header_extra: \setminted{fontsize=\normalsize}
+#+latex_header_extra: \setminted[haskell]{linenos=false,bgcolor=white,stripnl=false,mathescape,escapeinside=||}
+#+latex_header_extra: \renewcommand{\theFancyVerbLine}{\sffamily\textcolor[rgb]{0.5,0.5,1.0}{\oldstylenums{\arabic{FancyVerbLine}}}}
+*** Multimedia                                                                            :ignore:
+#+beamer_header: \usepackage{multimedia}
+*** Macros                                                                                :ignore:
+#+latex_header: \usepackage{amssymb} \usepackage{mathtools} \usepackage{amsmath}
+#+latex_header: \usepackage{bbm} \usepackage{stmaryrd}
+#+latex_header: \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+#+latex_header: \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+#+latex_header: \DeclarePairedDelimiter\intr{\llbracket}{\rrbracket} % Interpretation brackets
+*** Marsden's diagrams                                                                    :ignore:
+# I am using Marsden's diagrams!
+#+latex_header: \usepackage{macros}
+#+latex_header: \usepackage{diag}
+#+latex_header: \usepackage{eqproof}
+
+#+latex_header: \newcommand{\leftop}{\ensuremath{\operatorname{\lhd}}}
+#+latex_header: \newcommand{\rightop}{\ensuremath{\operatorname{\rhd}}}
+
+#+latex_header: \newcommand{\mvright}[1]{\ensuremath{#1^{\rhd}}}
+#+latex_header: \newcommand{\mvrightright}[1]{\ensuremath{#1^{\rhd\rhd}}}
+#+latex_header: \newcommand{\mvleft}[1]{\ensuremath{#1^{\lhd}}}
+#+latex_header: \newcommand{\mvleftleft}[1]{\ensuremath{#1^{\lhd\lhd}}}
+
+#+latex_header: \newcommand{\adjsql}[1]{\ensuremath{#1_l}}
+#+latex_header: \newcommand{\adjsqr}[1]{\ensuremath{#1_r}}
+
+#+latex_header: \newcommand{\repcontrato}[4]{
+#+latex_header: \path (#1.center) ++(0,-0.5) coordinate (#1-r)
+#+latex_header:      +(-1,1) coordinate (#1-rl)
+#+latex_header:      +(1,1) coordinate (#1-rr);
+#+latex_header: \coordinate (#1-a) at (#1.south);
+#+latex_header: \path
+#+latex_header:  let \p1 = (#1.north) in
+#+latex_header:  let \p2 = (#1-rl) in
+#+latex_header:  let \p3 = (#1-rr) in
+#+latex_header:  coordinate (#1-b) at (\x2, \y1)
+#+latex_header:  coordinate (#1-c) at (\x3, \y1);
+#+latex_header: \fill[catset] (#1.south) -- (#1-r) to[out=0, in=270] (#1-rr) -- (#1-c) -- (#1.north east) -- (#1.south east) -- cycle;
+#+latex_header: \fill[catcop] (#1-b) -- (#1-rl) to[out=270,in=180] (#1-r) to[out=0,in=270] (#1-rr) -- (#1-c) -- cycle;
+#+latex_header: \fill[catterm] (#1.south) -- (#1-r) to[out=180, in=270] (#1-rl) -- (#1-b) -- (#1.north west) -- (#1.south west) -- cycle;
+#+latex_header: \draw (#1-r) to[out=180,in=270] (#1-rl) to node[swap]{#2} (#1-b);
+#+latex_header: \draw (#1-r) to[out=0, in=270] (#1-rr) to node[swap]{#3} (#1-c);
+#+latex_header: \draw (#1-a) to node[swap]{$*$} (#1-r);
+#+latex_header: \strnat{#1-r};
+#+latex_header: \strlabu{#1-r}{#4}
+#+latex_header: }
+#+latex_header: \newcommand{\repcontratoex}[5]{
+#+latex_header: \coordinate[label=below:#2] (#1-b) at (#1.south);
+#+latex_header: \coordinate[label=above:#5] (#1-t) at (#1.north);
+#+latex_header:  \draw (#1-b) -- ++(0,1.5)
+#+latex_header:        (#1-t) -- ++(0,-1.5);
+#+latex_header:  \path (#1.south west) -- ++(0.5,1) coordinate (#1-bl)
+#+latex_header:        (#1.north east) -- ++(-0.5,-1) coordinate (#1-tr);
+#+latex_header:  \node[rectangle, fit=(#1-bl)(#1-tr)] (#1-subdiag) {};
+#+latex_header:  \repcontrato{#1-subdiag}{#2}{#3}{#4};
+#+latex_header:  \draw[very thick] (#1-subdiag.south west) rectangle (#1-subdiag.north east);
+#+latex_header: \begin{pgfonlayer}{background}
+#+latex_header:  \fill[catterm] (#1.south west) rectangle (#1.north);
+#+latex_header:  \fill[catc] (#1.south east) rectangle (#1.north);
+#+latex_header: \end{pgfonlayer}
+#+latex_header: }
+
+*** Hyperref                                                                              :ignore:
+#+latex_header: \usepackage{hyperref}
+#+latex_header: \hypersetup{colorlinks=false}
+*** Hiragana                                                                              :ignore:
+#+latex_header: \usepackage{CJKutf8}\usepackage[utf8]{inputenc} 
+#+latex_header: \DeclareFontFamily{U}{min}{} \DeclareFontShape{U}{min}{m}{n}{<-> udmj30}{}
+#+latex_header: \newcommand{\hirayo}{\text{\usefont{U}{min}{m}{n}\symbol{'210}}}
+# #+latex_header: \newcommand{\hirata}{\text{\usefont{U}{min}{m}{n}\symbol{'137}}}
+#+latex_header: \newcommand{\hirata}{\mathrm{Tmb}}
+
+*** Cancel                                                                                :ignore:
+# #+latex_header: \usepackage[makeroom]{cancel}
+
+# https://tex.stackexchange.com/a/31370/64938
+# #+latex_header: \renewcommand{\CancelColor}{\color{red}} %change cancel color to red
+# #+latex_header:\makeatletter
+# #+latex_header:\let\my@cancelto\cancelto %copy over the original cancelto command
+# #+latex_header:\newcommand<>{\cancelto}[2]{\alt#3{\my@cancelto{#1}{#2}}{\mathrlap{#2}\phantom{{#2}}}}
+# #+latex_header:% redefine the cancelto command, using \phantom to assure that the
+# #+latex_header:% result doesn't wiggle up and down with and without the arrow
+# #+latex_header:\makeatother
+
+*** tikzcancel                                                                            :ignore:
+#+latex_header: \tikzset{
+#+latex_header: main node/.style={inner sep=0,outer sep=0},
+#+latex_header: label node/.style={inner sep=0,outer ysep=.2em,outer xsep=.4em,font=\scriptsize,overlay},
+#+latex_header: strike out/.style={shorten <=-.2em,shorten >=-.5em,overlay}
+#+latex_header: }
+
+#+latex_header: \newcommand{\cancelto}[3][]{\tikz[baseline=(N.base)]{
+#+latex_header:   \node[main node](N){$#2$};
+#+latex_header:   \node[label node,#1, anchor=south west] at (N.north east){$#3$};
+#+latex_header:   \draw[strike out,-latex,#1]  (N.south west) -- (N.north east);
+#+latex_header: }}
+#+latex_header: \newcommand{\bcancelto}[3][]{\tikz[baseline=(N.base)]{
+#+latex_header:   \node[main node](N){$#2$};
+#+latex_header:   \node[label node,#1, anchor=north west] at (N.south east){$#3$};
+#+latex_header:   \draw[strike out,-latex,#1]  (N.north west) -- (N.south east);
+#+latex_header: }}
+
+** Macros                                                                                  :ignore:
+#+latex_header: \newcommand{\Sets}{\mathbf{Sets}}
+#+latex_header: \newcommand{\C}{\mathbf{C}}
+#+latex_header: \newcommand{\D}{\mathbf{D}}
+#+latex_header: \newcommand{\M}{\mathbf{M}}
+#+latex_header: \newcommand{\N}{\mathbf{N}}
+#+latex_header: \newcommand{\mact}{\underline{m}}
+#+latex_header: \newcommand{\nact}{\underline{n}}
+#+latex_header: \newcommand{\iact}{\underline{i}}
+#+latex_header: \newcommand{\kact}{\underline{k}}
+
+#+latex_header: \newcommand{\Optic}{\mathbf{Optic}}
+#+latex_header: \newcommand{\repl}{\mathrm{repl}}
+#+latex_header: \newcommand{\img}{\mathrm{img}}
+
+#+latex_header: \newcommand{\optic}[2]{\langle #1 \mid #2 \rangle}
+#+latex_header: \newcommand{\trv}{\operatorname{trv}}
+#+latex_header: \newcommand{\Lan}{\mathsf{Lan}}
+#+latex_header: \newcommand{\Ran}{\mathsf{Ran}}
+#+latex_header: \newcommand{\Nat}{\mathrm{Nat}}
+
+#+latex_header: \newcommand{\Prof}{\mathbf{Prof}}
+
+#+latex_header: \newcommand{\nto}{\nrightarrow}
+#+latex_header: \newcommand\id{\mathrm{id}}
+#+latex_header: \newcommand\dinat{\overset{\cdot\cdot}\to}
+#+latex_header: \newcommand\Id{\mathrm{Id}}
+#+latex_header: \newcommand\Nat{\mathrm{Nat}}
+#+latex_header: \newcommand\Grp{\mathsf{Grp}}
+#+latex_header: \newcommand\Set{\mathsf{Set}}
+#+latex_header: \newcommand\zet{\mathbb{Z}}
+#+latex_header: \newcommand\nat{\mathbb{N}}
+#+latex_header: \newcommand\lensto{\nrightarrow}
+#+latex_header: \newcommand\rat{\mathbb{Q}}
+#+latex_header: \newcommand\reals{\mathbb{R}}
+#+latex_header: \newcommand\com{\mathbb{C}}
+#+latex_header: \newcommand\hC{\widehat{\cal C}}
+#+latex_header: \newcommand\todot{\xrightarrow{.}}
+#+latex_header: \newcommand\tonat{\Rightarrow}
+#+latex_header: \newcommand\shape{\mbox{\textesh}}
+#+latex_header: \newcommand\Vcat{\cal{V}\mbox{-category}}
+#+latex_header: \newcommand\Vfunctor{\cal{V}\mbox{-functor}}
+#+latex_header: \newcommand\Vt[1]{\cal{V}\mbox{-#1}}
+#+latex_header: \newcommand\V{{\cal{V}}}
+#+latex_header: \newcommand\opticmorph[4]{\begin{pmatrix}#1 \\ #2\end{pmatrix} \to \begin{pmatrix}#3 \\ #4\end{pmatrix}}
+
+* Title
+#+beamer: \maketitle
+
+* Motivation
+# Thank you very much to the organizers.
+
+# I am going to talk to you about optics, which are ways of accessing
+# data structures in programming. Common accessing patterns that
+# repeat again and again, so we can abstract them.
+
+# We will give them an algebraic description and study a
+# representation theorem.
+
+** Motivation
+# Let's motivate why are we studying these.
+
+#+latex: \begin{center}{\huge\textbf{Part 1: Motivation}}\end{center}
+
+** Optics
+*Optics* are composable data accessors. They allow us to access and
+modify nested data structures.
+
+ * Each *family of optics* encodes a data accessing pattern.
+   * *Lenses* access subfields.
+   * *Prisms* pattern match.
+   * *Traversals* transform lists.
+
+ * Two optics (of any two families!) can be directly composed.
+
+** Lenses
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+# We start with some motivation for studying this problem.  
+
+# How do we do that?  We need a "view" function that takes the 
+# data structure "s" and looks into one of its parts "a". 
+
+# And then we need an "update" function, that takes the data structure
+# and something new "b" that we want to put on the place of "a".  With
+# that we get "t", a new data structure.
+
+# For example, we have a set of postal addresses and one of the fields
+# of this postal address is a Street.  I can see the street and I can
+# update it; this is a bidirectional accessor.
+
+# We want bidirectional *data accessors* (i.e. *Lenses* give /view/ and /update/).
+
+
+#+attr_latex: :options [Oles, 1982]
+#+begin_definition
+#+latex: \vspace{0.15cm}
+#+latex: \begin{overprint}
+#+latex: \onslide<1>
+
+\[\mathbf{Lens} \left( A, S \right) := (S \to A) \times (S \times A \to S).\]
+
+#+latex: \onslide<2>
+
+\[\mathbf{Lens}
+\left( \begin{pmatrix} A \\ B \end{pmatrix}, \begin{pmatrix} S \\ T \end{pmatrix} \right) :=
+(S \to A) \times (S \times B \to T).\]
+
+#+latex: \end{overprint}
+#+end_definition
+
+#+latex: \begin{columns}
+#+latex: \column{0.35\textwidth}
+
+#+latex: \begin{overprint}
+#+latex: \onslide<1>
+#+name: lens
+#+attr_latex: :width 5cm
+[[./images/lens-wn-mono.png]] 
+#+latex: \onslide<2>
+#+name: lens
+#+attr_latex: :width 5cm
+[[./images/lens-wn.png]] 
+#+latex: \end{overprint}
+
+#+latex: \column{0.40\textwidth}
+
+#+latex: \begin{overprint}
+#+latex: \onslide<1>
+#+attr_latex: :width 4.8cm
+[[./images/code-lensdef-mono.png]]
+#+latex: \onslide<2>
+#+attr_latex: :width 4.8cm
+[[./images/code-lensdef.png]]
+#+latex: \end{overprint}
+
+#+latex: \end{columns}
+
+** Lenses
+#+attr_latex: :width 10cm
+[[./images/code-lensex.png]]  
+
+** Prisms
+# Not all data accessors fill this classic pattern. For example, an
+# address is Maybe! a postal address, but maybe not, and it could be
+# also an email address.  We need to use a different kind of data
+# accessor.
+
+#+begin_definition
+\[\mathbf{Prism}
+\left( \begin{pmatrix} A \\ B \end{pmatrix}, \begin{pmatrix} S \\ T \end{pmatrix} \right) 
+= (S \to T + A) \times (B \to T).\]
+#+end_definition
+
+#+latex: \begin{columns}
+#+latex: \column{0.35\textwidth}
+
+#+name: prism-wn
+#+attr_latex: :width 4.8cm
+[[./images/prism-wn.png]]  
+ #+latex: \column{0.40\textwidth}
+#+attr_latex: :width 5cm
+[[./images/code-prismdef.png]]  
+#+latex: \end{columns}
+
+** Prisms
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+#+attr_latex: :width 10cm
+[[./images/code-prismex.png]]  
+
+[fn::Adapted from Penner's *@opticsbyexample*]
+
+** Traversals
+# Even more complicated, sometimes we want to deal not with one focus,
+# but multiple foci at the same time.
+
+# Here we have some data structure that can contain a list of
+# subparts. We want to extract them, change that list and then
+# update the original structure with the new elements.
+
+#+begin_definition
+\[\mathbf{Traversal}
+\left( \begin{pmatrix} A \\ B \end{pmatrix},
+\begin{pmatrix} S \\ T \end{pmatrix} \right) = 
+\left(S \to \sum\nolimits_n A^n \times (B^n \to T)\right).
+\]
+#+end_definition
+
+#+name: traversal
+#+attr_latex: :width 7cm
+[[./images/traversal-wn.jpg]]
+
+#+name: traversal
+#+attr_latex: :width 7.5cm
+[[./images/code-traversal.png]]
+
+** The problem of modularity
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+ * How to compose any two optics?
+ * Even from different *families of optics* (lens+prism+traversal).
+ * Simple but tedious code.
+ * Every pair of families needs special attention.
+
+#+attr_latex: :width 10.5cm
+[[./images/code-lensprism.png]]  
+
+** Profunctor optics
+#+attr_latex: :width 11cm
+[[./images/code-venues.png]]  
+
+*** code                                                                                :noexport:
+#+BEGIN_SRC haskell
+let venues =
+  [ "Taltech. Eitahate tee 5, 19086 Tallinn, Estonia"
+  , "Oslotech. Gaustadalléen 21, 0349 Oslo, Norway"
+  , "Linnateatteri. Puutarhakatu 8B, 20100 Turku, Finland" ]
+
+-- We can compose lenses, prisms and traversals.
+each :: Traversal [String] String
+address :: Prism String Address
+country :: Lens Address String
+
+>>> venues^.each.address.country %~ uppercase
+[ "Taltech. Eitahate tee 5, 19086 Tallinn, ESTONIA"
+, "Oslotech. Gaustadalléen 21, 0349 Oslo, NORWAY"
+, "Linnateatteri. Puutarhakatu 8B, 20100 Turku, FINLAND" ]
+#+END_SRC
+
+** Profunctor optics
+# This problem has been solved for programmers with profunctor optics.
+# The solution given by Kmett in the "lens" library for Haskell was
+# the following: some kinds of data accesors have an equivalent
+# formulation in terms of functions polymorphic over a profunctor.
+
+# That is very convenient, because, even if they are equivalent,
+# composition of optics in this representation becomes function
+# composition.  We do not need to worry anymore.
+
+#+attr_latex: :width 9cm
+[[./images/code-tambara.png]]  
+
+A *Tambara module* is a profunctor endowed with a natural transformation
+$p(A,B) \to p(C \otimes A, C \otimes B)$ subject to some conditions.
+Every optic can be written as a function polymorphic on these Tambara
+modules. *Why is this?*
+
+* Outline
+** Outline
+
+ * *Existential optics:* a definition of optic.
+ * *Profunctor optics:* on optics as parametric functions.
+ * *Composing optics:* on how composition works.
+ * *Case study:* on how to invent an optic.
+ * *Further work:* and implementations.
+
+* Existential optics
+** Preliminaries
+
+# We are going to use some results from the theory of (co)ends to give
+# a unified representation of our optics.
+
+#+latex: \begin{center}{\huge\textbf{Part 2: Existential optics}}\end{center}
+
+** Parametricity as ends
+
+ * We write $\forall$ to denote *polymorphism* (/actually, ends/).
+ * We write $\exists$ to denote *existential types* (/coends/).
+
+*Parametricity* (/Yoneda lemma/) implies the following rules.
+
+#+latex: \only<1>{
+ * $\forall X . ((A \to X) \to G X) \cong G A$
+#+latex: }\only<2>{
+ * $\forall X . (\cancelto[accent]{(A \to X)}{X = A} \to G X) \cong G A$
+#+latex: }\only<1>{
+ * $\exists X . ((X \to A) \times F X) \cong F A$
+#+latex: }\only<2>{
+ * $\exists X . (\cancelto[accent]{(X \to A)}{X = A} \times F X) \cong F A$
+#+latex: }
+*Continuity* implies the following.
+
+ * $((\exists C . FC) \to D) \cong (\forall C . FC \to D)$
+ * $(D \to (\forall C . PC)) \cong (\forall C . D \to PC)$
+
+[fn::These are rules from /(co)end calculus/. See Loregian's *"Coend calculus"*.]
+
+** A definition of "optic"
+# How are we going to use it?  We will write all our optics as
+# particular cases of Coends.
+
+# An action of a monoidal category into a category is just a monoidal
+# functor from M to the category of endofunctors in C, considered with
+# composition as the monoidal product.
+
+# For each of these actions, we can define a category of optics, where
+# objects are pairs and morphisms are of this form:  there exists some
+# m in M such that we can go from s to m acting on a, but also go back
+# from m acting on b to t.
+
+#+attr_latex: :options [Milewski, Boisseau/Gibbons, Riley, simplified]
+#+begin_definition
+Fix a monoidal class of endofunctors $\M$ (that is, a /constraint/ satisfied by
+the identity and closed under composition, such as /Applicative/ or /Traversable/).
+
+An *optic* from $(S,T)$ with /focus/ on $(A,B)$ is an element of the following type.
+\[\mathbf{Optic}
+\left( \begin{pmatrix} A \\ B \end{pmatrix}, \begin{pmatrix} S \\ T
+\end{pmatrix} \right) := \exists M \in \M .\;
+( S \to M A) \times
+(M B \to T). \]
+#+end_definition
+
+*Intuition:* The optic splits into some focus $A$ and some /context/ $M$. We cannot
+access that context, but we can use it to update.
+
+#+attr_latex: :width 9cm
+[[./images/code-defoptic.png]]
+
+*** code                                                                                :noexport:
+#+BEGIN_SRC haskell
+-- Definition
+data ExOptic mon a b s t where
+  ExOptic :: (mon m) => (s -> m a) -> (m b -> t)
+          -> ExOptic mon a b s t
+#+END_SRC
+
+# This is called the /existential form/ of the optic. 
+# Let's justify this is a good definition for an optic.
+
+** Lenses are optics
+# This equivalence is basically to say that Yoneda makes the two
+# representations equal.
+
+#+attr_latex: :width 9cm
+[[./images/code-exlens.png]]
+
+
+#+latex_header: \newtheorem{proposition}[theorem]{Proposition}
+#+attr_latex: :options [from Milewski, 2017]
+#+begin_proposition
+Lenses are optics for the product.
+# \[\begin{pmatrix}\includegraphics[width=0.4\linewidth]{./images/lens-wn.png}\end{pmatrix}
+# \cong
+# \begin{pmatrix}\includegraphics[width=0.4\linewidth]{./images/lens-ex-wn.png}\end{pmatrix}\]
+#+end_proposition
+
+/Proof./
+#+latex: \only<1>{
+\[\begin{aligned}
+\exists C .\  (S \to C \times A) \times (C \times B \to T) & \cong & \quad\mbox{(\textit{ Product })} \\ 
+\exists C .\ (S \to C) \times (S \to A) \times (C \times B \to T) & \cong & \quad\mbox{(\textit{ Yoneda })} \\
+(S \to A) \times (S \times B \to T)
+\end{aligned}\]
+#+latex: }\only<2>{
+\[\begin{aligned}
+\exists C .\  (S \to C \times A) \times (C \times B \to T) & \cong & \quad\mbox{(\textit{ Product })} \\ 
+\exists C .\ \cancelto[accent]{(S \to C)}{S = C} \times (S \to A) \times (C \times B \to T) & \cong & \quad\mbox{(\textit{ Yoneda })} \\
+(S \to A) \times (S \times B \to T)
+\end{aligned}\]
+#+latex: }
+
+
+*** Code                                                                                  :noexport:
+#+BEGIN_SRC haskell
+ExOptic (×) a b s t ≅ (s -> a) × (s × b → t)
+#+END_SRC
+
+** Prisms are optics
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+# And we can also get prisms.  This derivation is described both by
+# Milewski and then by Boisseau-Gibbons.
+
+#+attr_latex: :width 9cm
+[[./images/code-exprism.png]]
+
+#+attr_latex: :options [Milewski, 2017]
+#+begin_proposition
+Prisms are optics for the coproduct.
+# \[\begin{pmatrix}\includegraphics[width=0.4\linewidth]{./images/prism-wn.png}\end{pmatrix}
+# \cong
+# \begin{pmatrix}\includegraphics[width=0.4\linewidth]{./images/prism-ex-wn.png}\end{pmatrix}\]
+#+end_proposition
+
+/Proof./
+#+latex: \only<1>{
+\[\begin{aligned}
+\exists M .\ (S \to M + A) \times (M + B \to T) 
+&\cong \quad\mbox{(\textit{ Coproduct })} \\
+\exists M .\ (S \to M + A) \times (M \to T) \times (B \to T)
+&\cong \quad\mbox{(\textit{ Yoneda })} \\
+(S \to T + A) \times (B \to T)
+\end{aligned}\]
+#+latex: }\only<2>{
+\[\begin{aligned}
+\exists M .\ (S \to M + A) \times (M + B \to T) 
+&\cong \quad\mbox{(\textit{ Coproduct })} \\
+\exists M .\ (S \to M + A) \times \cancelto[accent]{(M \to T)}{M = T} \times (B \to T)
+&\cong \quad\mbox{(\textit{ Yoneda })} \\
+(S \to T + A) \times (B \to T)
+\end{aligned}\]
+#+latex: }
+
+** Traversals are optics
+#+attr_latex: :width 9cm
+[[./images/code-extraversal.png]]
+
+#+begin_proposition
+Traversals are optics for the action of *polynomial functors* $\sum\nolimits_n C_n \times \square^n$.
+# \[\begin{pmatrix}\includegraphics[width=0.4\linewidth]{./images/traversal-wn.png}\end{pmatrix}
+# \cong
+# \begin{pmatrix}\includegraphics[width=0.4\linewidth]{./images/traversal-ex-wn.png}\end{pmatrix}\]
+#+end_proposition
+That is,
+\[\exists C .
+\left( S \to \sum\nolimits_n C_n \times A^n \right) \times \left(\left(\sum\nolimits_n C_n \times B^n \right) \to T\right)
+\cong
+\left(S \to \sum\nolimits_n A^n \times (B^n \to T)\right).\]
+
+*** code                                                                                :noexport:
+#+BEGIN_SRC haskell
+s -> ([a], [b] -> t) ≅ ExOptic Series a b s t
+#+END_SRC
+
+** Traversals are optics: proof
+# To fit the traversal into this pattern was left as an open problem
+# by Milewski and then an inductive proof is given in
+# Boisseau-Gibbons.  That proof uses Traversable functors, but we
+# propose a derivation using Yoneda and in terms of polynomial
+# functors.
+
+Again by the Yoneda lemma, this time for functors $C \colon \mathbb{N} \to \mathbf{Sets}$.
+
+\[\begin{aligned}
+\exists C . \left(S \to \sum\nolimits_{n} C_n \times A^n \right) \times \left( \sum\nolimits_{n} C_n \times B^n , T\right) 
+&\cong\quad\mbox{\textit{( cocontinuity )}}\\
+\exists C . \left(S \to \sum\nolimits_{n} C_n \times A^n \right) \times \prod_{n} \left( C_n \times B^n \to T\right) 
+&\cong\quad\mbox{\textit{( prod/exp adjunction )}}\\
+\exists C . \left(S \to \sum\nolimits_{n} C_n \times A^n \right) \times \prod_{n} \left( C_n \to (B^n \to T)\right)
+&\cong\quad\mbox{\textit{( natural transformation )}}\\
+\exists C . \left(S, \sum\nolimits_{n} C_n \times A^n \right) \times 
+\only<1>{\mathrm{Nat} \left( C_{\square} , (B^{\square} \to T) \right)}
+\only<2>{\cancelto[accent]{ \mathrm{Nat} \Big( C_{\square} , (B^{\square} \to T) \Big)}{C = B^{\square} \to T}}
+&\cong\quad\mbox{\textit{( Yoneda lemma )}}\\
+S \to \sum\nolimits_{n} A^n \times (B^n \to T)
+\end{aligned}\]
+
+Programming libraries use *traversable* functors to describe traversals.
+Polynomials are related to these /traversable/ functors by the work of
+Jaskelioff and O'Connor.
+
+** Unification of optics
+# We can get the majority of the optics that are interesting in
+# programming this way, and derive their concrete representations from
+# some action associated to them.
+
+All the usual optics are of this form.  Some new ones arise naturally.
+
+|------------------+-----------------------------------------------------+-------------------------|
+| Name             | Concrete                                            | Action                  |
+|------------------+-----------------------------------------------------+-------------------------|
+| Adapter          | $\small{(S \to A) \times (B \to T)               }$ | Identity                |
+| Lens             | $\small{(S \to A) \times (B \times S \to T)      }$ | Product                 |
+| Prism            | $\small{(S \to T + A) \times (B \to T)           }$ | Coproduct               |
+| Grate            | $\small{((S \to A) \to B) \to T                  }$ | Exponential             |
+| Affine Traversal | $\small{S \to T + A \times (B \to T)             }$   | Product and coproduct   |
+| Glass            | $\small{((S \to A) \to B) \to S \to T        }$    | Product and exponential |
+| Traversal        | $\small{S \to \Sigma n . A^n \times (B^n \to T)  }$ | Polynomials             |
+| Setter           | $\small{(A \to B) \to (S \to T)                  }$ | Any functor             |
+|------------------+-----------------------------------------------------+-------------------------|
+
+** Unification of optics
+#+attr_latex: :width 11cm
+[[./images/code-unification.png]]
+
+* Profunctor representation theorem
+** Profunctor representation
+
+# We are going to use some results from the theory of (co)ends to give
+# a unified representation of our optics.
+
+#+latex: \begin{center}{\huge\textbf{Part 3: the Profunctor representation theorem}}\end{center}
+
+** Tambara modules
+#+attr_latex: :options [from Pastro/Street]
+#+begin_definition
+A *Tambara module* is a profunctor $P$ together with a family of morphisms
+satisfying some coherence conditions.
+\[P(A,B) \to P(MA, MB),\qquad M \in \M.\]
+#+end_definition
+
+Pastro and Street showed they are *algebras* for a monad.
+\[\Psi Q(X,Y) = \exists M,A,B .\ 
+Q(A,B) \times (MA \to X) \times (Y \to MB)\]
+We call $\hirata$ to the Eilenberg-Moore category for the monad.
+
+#+attr_latex: :width 10cm
+[[./images/code-tambara.png]]
+
+** Profunctor representation
+#+attr_latex: :options [Boisseau/Gibbons]
+#+begin_theorem
+<<th:profunctorrepresentation>>
+Optics are functions parametric over Tambara modules.
+\[\Optic((A,B),(S,T)) \cong
+\forall P \in \mathrm{Tmb}.\  P(A,B) \to P(S,T)\]
+#+end_theorem
+
+#+attr_latex: :width 10cm
+[[./images/code-profrep.png]]
+
+* Profunctor representation: Prof version                                                 :noexport:
+** Profunctor representation
+
+# We are going to use some results from the theory of (co)ends to give
+# a unified representation of our optics.
+
+#+latex: \begin{center}{\huge\textbf{Part 3: the Profunctor representation theorem}}\end{center}
+
+For an action $(\underline{\phantom{a}}) \colon \M \to [\C, \C]$.
+
+*(This time in Prof!)*
+
+** The bicategory Prof
+The bicategory $\Prof$ has
+
+ * 0-cells are (small) categories $\mathbf{A}, \mathbf{B}, \C,\D,\dots$, as in $\mathbf{Cat}$;
+ * 1-cells $\C \nrightarrow \D$ are profunctors $p \colon \C^{op} \times \D \to \Sets$,
+ * 2-cells $p \tonat q$ are natural transformations.
+
+Two profunctors $p \colon \C \nrightarrow \D$ and $q \colon \D \nrightarrow \mathbf{E}$ are composed into
+$(q \diamond p) \colon \C \nrightarrow \mathbf{E}$ with the following (co)end.
+\[\begin{matrix}
+(q \diamond p)(c,e) &=& {\displaystyle\int^{d \in \mathbf{D}}}& p(c,d)& \times& q(d,e). \\
+\only<2>{(Q \circ P)(c,e)} &\only<2>{\iff}& \only<2>{\exists d \in \D.} & \only<2>{P(c,d)} & \only<2>{\wedge} & \only<2>{Q(d,e).}
+\end{matrix}\]
+Yoneda lemma makes the hom profunctor $\hirayo \colon \C^{op} \times \C \to \Sets$ the identity.
+
+** Promonads and the optics category
+A *promonad* $\psi \in [ \mathbf{A}^{op} \times \mathbf{B} , \mathbf{Sets}]$ is a monoid in the bicategory of profunctors.
+
+#+ATTR_LATEX: :options [Kleisli construction in \textbf{Prof}, e.g. in Pastro/Street]
+#+begin_lemma
+The *Kleisli object* for the promonad, $\mathrm{Kl}(\psi)$, is a category with the same
+objects, but hom-sets given by the promonad, $\mathrm{Kl}(\psi)(a,b) = \psi(a,b)$.
+#+end_lemma
+
+For some fixed kind of optic, we can create a category with the same objects as
+$\mathbf{C}^{op} \times \mathbf{C}$, but where morphisms are optics of that kind.
+\[
+\psi( (s,t) , (a,b) ) = \int^{m \in \mathbf{M}} \mathbf{C}(s , \underline{m} a) \times \mathbf{D}(\underline{m} b , t)
+\]
+That is, $\mathbf{Optic} := \mathrm{Kl}(\psi)$.
+
+** Kleisli object
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+\footnote{I am using Dan Marsden's macros for diagrams}
+
+\begin{center}
+\begin{gathered}
+\begin{tikzpicture}[scale=0.5]
+\path coordinate[dot, label=left:$h$] (a)
+ +(0,1) coordinate[label=above:$F$] (t)
+ +(0,-3) coordinate[label=below:$F$] (bl)
+ ++(2,-1) coordinate[dot, label=below:$\mu$] 
+ (mu) ++(-1,-1) coordinate[label=left:$$] (sigma1) ++(0,-1) coordinate[label=below:$\Psi$] (bm)
+ (mu) ++(1,-1) coordinate[label=right:$$] (sigma2) ++(0,-1) coordinate[label=below:$\Psi$] (br) ++(0.5,3) coordinate[label=above:$\mathbf{C}^{op} \times \mathbf{C}$];
+\draw (bl) -- (a) -- (t)
+ (mu) to[out=90, in=0] (a)
+ (bm) -- (sigma1) to[out=90, in=180] (mu.west) -- (mu.east) to[out=0, in=90] (sigma2) -- (br);
+\begin{pgfonlayer}{background}
+\fill[catterm] ($(t) + (-1,0)$) rectangle (bl);
+\fill[catc] (t) rectangle ($(br) + (2,0)$);
+\end{pgfonlayer}
+\end{tikzpicture}
+\end{gathered} $=$
+\begin{gathered}
+\begin{tikzpicture}[scale=0.5]
+\path coordinate[dot, label=left:$\alpha$] (a)
+ +(0,1) coordinate[label=above:$i$] (t)
+ +(0,-3) coordinate[label=below:$i$] (bl)
+ ++(2,-1) coordinate[dot, label=below:$\mu$] 
+ (mu) ++(-1,-1) coordinate[label=left:$$] (sigma1) ++(0,-1) coordinate[label=below:$\Psi$] (bm)
+ (mu) ++(1,-1) coordinate[label=right:$$] (sigma2) ++(0,-1) coordinate[label=below:$\Psi$] (br) 
+ ++(0.5,3) coordinate[label=above:$\mathbf{C}^{op} \times \mathbf{C}$]
+ ++(-5,-2) coordinate[label=above:$\mathbf{Optic}$];
+\draw (bl) -- (a) -- (t)
+ (mu) to[out=90, in=0] (a)
+ (bm) -- (sigma1) to[out=90, in=180] (mu.west) -- (mu.east) to[out=0, in=90] (sigma2) -- (br);
+\draw (-3,1) -- (-3,-3) coordinate[label=below:$\exists! G_{h}$];
+\begin{pgfonlayer}{background}
+\fill[color={green!20}] ($(t) + (-3,0)$) rectangle (bl);
+\fill[catc] (t) rectangle ($(br) + (2,0)$);
+\fill[catterm] (-3,1) rectangle (-4,-3);
+\end{pgfonlayer}
+\end{tikzpicture}
+\end{gathered}
+\end{center}
+
+
+#+attr_latex: :options [Pastro/Street]
+#+begin_theorem
+Functors $[ \mathbf{Optic} , \mathbf{Set} ]$ are equivalent to right modules on the terminal object for
+the promonad $\mathrm{Mod}(\psi)$, which are algebras for an associated monad.
+#+end_theorem
+
+It follows from the universal property of the Kleisli object that
+\[\mathbf{Cat}( \mathbf{Optic} , \mathbf{Set}) \cong
+\mathbf{Prof}(1, \mathbf{Optic}) \cong
+\mathbf{Mod}(\psi).\]
+
+** Profunctor representation theorem
+#+attr_latex: :options [Riley 2018, Boisseau/Gibbons 2018, different proof technique]
+#+begin_theorem
+Optics given by $\psi$ correspond to parametric functions over
+profunctors that have (pro)module structure over $\psi$.
+\[\mathbf{Optic}((a,b),(s,t))
+\cong
+\int_{p \in \mathbf{Mod}(\psi)} p(a,b) \to p(s,t)\]
+#+end_theorem
+
+/Proof./
+\[\begin{aligned}
+\int_{p \in \mathbf{Mod}(\psi)} p(a,b) \to p(s,t) &\cong
+\qquad\mbox{\textit{( lemma )}}\\ 
+\int_{p \in [ \mathbf{Optic} , \mathbf{Sets} ]} p(a,b) \to p(s,t) &\cong
+\qquad\mbox{\textit{( by definition )}}\\ 
+ \mathrm{Nat}(-(a,b) , -(s,t)) &\cong
+\qquad\mbox{\textit{( Yoneda embedding )}}\\ 
+ \mathrm{Nat}(  \mathrm{Nat}(\mathbf{Optic}((a,b) , \square) , -)  ,  \mathrm{Nat}(\mathbf{Optic} ((s,t), \square), -)) &\cong
+\qquad\mbox{\textit{( Yoneda embedding )}}\\
+ \mathrm{Nat}(  \mathbf{Optic}((a,b) , \square), \mathbf{Optic} ((s,t), \square)) &\cong
+\qquad\mbox{\textit{( Yoneda embedding )}}\\
+\mathbf{Optic}((s,t),(a,b)) &\phantom{\cong}
+\end{aligned}
+\]
+
+** Summary
+
+ * $\mathbf{Optic}$ is the full subcategory on representable functors
+   of a Kleisli category.
+
+   * *In Prof, it is a Kleisli object.*
+
+ * Tambara modules are algebras for the monad.
+
+   * *In Prof, they are (pro)algebras for the promonad.*
+     *It follows that $[ \mathbf{Optic} , \Sets ] \cong \hirata$.*
+
+* Composition and examples
+** Composition of optics
+
+# We are going to use some results from the theory of (co)ends to give
+# a unified representation of our optics.
+
+#+latex: \begin{center}{\huge\textbf{Part 4: Composition of optics}}\end{center}
+
+** Composing optics via coproducts
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+When we compose two optics in Haskell, the compiler joins the
+constraints. Is this an *optic* according to the definition? If so, 
+for which action?
+
+#+latex: \vspace{0.5cm}
+
+#+latex: \begin{overprint}
+#+latex: \onslide<1>
+
+#+attr_latex: :width 9cm
+[[./images/code-haskellcomposes.png]]
+
+#+latex: \onslide<2>
+
+#+attr_latex: :width 9cm
+[[./images/code-haskellcomposes-coprod.png]]
+
+#+latex: \end{overprint}
+
+ * In other words, $P$ has a *bialgebra* structure.
+ * This is the same as $P$ having algebra structure for
+   the *coproduct monad* (Kelly, Adamek).
+ * We prove the coproduct monad is the monad for the *coproduct action*.
+
+** Composing optics via distributive laws
+
+ * The folklore is that *lenses* and *prisms* compose into
+   the optic for the action of a */single/* sum and product.
+
+   #+attr_latex: :width 9cm
+   [[./images/code-affined.png]]
+
+ * Haskell actually composes *lenses* and *prisms* into the
+   optic for the action of */multiple/* sums and products.
+
+   #+attr_latex: :width 9cm
+   [[./images/code-affinec.png]]
+
+In which sense is folklore right? 
+\pause
+We show that the fact that $(\times)$ distributes over $(+)$ induces a
+distributive law between the Pastro-Street monads.
+
+** Composing optics via distributive laws
+*Monads* can be joined in two ways.
+
+ * Taking their *coproduct* monad $S \oplus T$; and
+ * using a distributive law $ST \tonat TS$ to induce a monad
+   structure on the *composition* $TS$.
+
+\pause
+
+*Families of optics* can be joined in two ways.
+
+ * Taking their *coproduct* (as Haskell does),
+ * using a distributive law between them to induce optic
+   structure on the *composition*.
+
+*Can we make this analogy precise?* \pause
+
+ * Families of optics are a class of *promonads* (monoids in endoprofunctors).
+ * *Coproducts of promonads* correspond to their coproduct.
+ * *Distributive laws between promonads* are their distributive laws.
+
+* Summary and further work
+** Summary and further work
+
+# We are going to use some results from the theory of (co)ends to give
+# a unified representation of our optics.
+
+#+latex: \begin{center}{\huge\textbf{Part 4: Summary and further work}}\end{center}
+
+** Summary
+
+ * *Optics:* a zoo of accessors used by programmers /[Kmett, lens library, 2012]/.
+   * *General definition*: unified definition of optics as a coend.
+   * *Concrete cases*: constructing new optics.
+
+ * *Profunctor optics:* for monoidal actions /[Pastro/Street, 2008]/, /[Milewski, 2017]/
+   and general actions /[Boisseau/Gibbons, 2018]/.
+   * *Profunctor representation*: can be composed easily.
+   * Going from *existential* to *profunctor* and back is done in general.
+
+ * *Composition of optics:* what do we get when composing two optics.
+   * Haskell considers coproducts of monads.
+   * Composing with distributive laws is another natural choice.
+   * What are other applications of *promonads* in programming?
+
+** Related and further work
+
+ * *Lawful optics*. Studied by /[Riley, 2018]/.
+   * Programmers use *lawful optics*, optics with certain properties.
+
+ * *Generalizations:* in which other settings do we get useful results?
+   * Enrichments over a cartesian Benabou cosmos ${\cal{V}}$.
+   * We have extended the theorems for /mixed optics/.
+
+ * *Implementation:* developing libraries of optics.
+   * A concise library in *Haskell*. [[https://github.com/mroman42/vitrea/]]
+   * Derivations in *Agda* / *Idris* allow us to extract translation
+     algorithms for optics.  Everything we have been doing is
+     constructive.
+
+#+attr_latex: :width 11cm
+[[./images/agdalens.jpg]]
+
+** Some literature
+#+beamer: \textbf{Oles, 1982.}
+/[[https://www.cs.cmu.edu/afs/cs.cmu.edu/project/fox-19/member/jcr/www/FrankOlesThesis.pdf][A category theoretic approach to the semantics of programming
+languages (PhD thesis).]]/ Defines lenses for the first time.
+
+#+beamer: \textbf{Kmett, 2012.}
+/[[https://hackage.haskell.org/package/lens-0.1][Lens library]]./ Implements optics in Haskell.
+
+#+beamer: \textbf{Pickerings/Gibbons/Wu, 2016.}
+/[[http://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/poptics.pdf][Profunctor optics: modular data accessors]]/. Derives lenses, prisms,
+adapters and traversals in Haskell.
+
+#+beamer: \textbf{Milewski, 2017.}
+/[[https://bartoszmilewski.com/2017/07/07/profunctor-optics-the-categorical-view/][Profunctor optics, the categorical view.]]/ Tambara modules for lenses
+and prisms.
+
+#+beamer: \textbf{Boisseau/Gibbons, 2018.}
+/[[https://www.cs.ox.ac.uk/jeremy.gibbons/publications/proyo.pdf][What you needa know about Yoneda]]/.  General definition of optics and a
+general profunctor representation theorem.  Traversal as the optic for
+traversables.
+
+#+beamer: \textbf{Riley, 2018.}
+/[[https://arxiv.org/abs/1809.00738][Categories of optics]]/.  General framework for obtaining laws for the
+optics.
+
+* References                                                                                :ignore:
+* Local variables                                                                         :noexport:
+# Local Variables:
+# org-latex-pdf-process: ("pdflatex --shell-escape -interaction nonstopmode %f" "bibtex %b" "pdflatex --shell-escape -interaction nonstopmode %f")
+# org-latex-packages-alist: nil
+# org-export-with-title: nil
+# End:

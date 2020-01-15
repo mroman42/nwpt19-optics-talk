@@ -1,0 +1,184 @@
+\ProvidesPackage{macros}
+
+% Package from Dan Marsden
+
+\usepackage{etex}
+\usepackage{comment}
+
+%Begin hyperrefs
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=false,
+    pdfborder={0 0 0},
+}
+%End hyperrefs
+
+\newenvironment{rednote}{
+\color{red}
+}{}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage{graphicx}
+\usepackage{mathtools}
+
+\usepackage{amsthm}
+\usepackage{ifthen}
+
+%Tikz stuff
+\usepackage{tikz}
+
+\usetikzlibrary{positioning,arrows,matrix,calc,intersections,fit, patterns, shapes}
+
+\tikzstyle{vmlabel}=[rectangle, inner xsep=0pt, inner ysep=1pt]
+
+%Begin theorems
+\DeclareOption{theorems}{
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{counter}[theorem]{Counterexample}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\numberwithin{theorem}{section}
+}
+%End theorems
+
+\newcommand{\twocell}[5]{
+\ensuremath{
+\begin{gathered}
+ \begin{tikzpicture}
+  \node (CLeft) {\ensuremath{#1}};
+  \node (CRight) [right of=CLeft, node distance=1.5cm] {\ensuremath{#2}};
+  \draw[->,bend left=40] (CLeft) to node[above,midway] (F) {\ensuremath{#3}} (CRight);
+  \draw[->,bend right=40] (CLeft) to node[below,midway] (G) {\ensuremath{#4}} (CRight);
+  \draw[-implies, double, double equal sign distance,shorten >=2pt, shorten <=2pt] (F) to node[right,midway]{\ensuremath{#5}} (G);
+ \end{tikzpicture}
+\end{gathered}}}
+
+\newcommand{\adjunctionex}[5]{
+\ensuremath{
+\begin{gathered}
+\begin{tikzpicture}
+  \node (CLeft) {\ensuremath{#1}};
+  \node (CRight) [right of=CLeft, node distance=2cm] {\ensuremath{#2}};
+  \node (Adj) [right of=CLeft, node distance=1cm] {\ensuremath{#5}};
+  \draw[->,bend left=40] (CLeft) to node[above,midway] (F) {\ensuremath{#3}} (CRight);
+  \draw[->,bend left=40] (CRight) to node[below,midway] (G) {\ensuremath{#4}} (CLeft);
+\end{tikzpicture}
+\end{gathered}}}
+
+\newcommand{\vmorphexx}[6]{
+\begin{gathered}
+\begin{tikzpicture}[node distance=#5, font=#4]
+\node[vmlabel] (t) {\ensuremath{#1}};
+\node[below of=t, vmlabel] (b) {\ensuremath{#2}};
+\draw[#6] (t) to node[right]{\ensuremath{#3}} (b);
+\end{tikzpicture}
+\end{gathered}
+}
+
+\newcommand{\vsmallincx}[2]{
+ \vmorphexx{#1}{#2}{}{\scriptsize}{0.75cm}{right hook->}
+}
+
+\newcommand{\vsmallmonox}[3]{
+ \vmorphexx{#1}{#2}{#3}{\scriptsize}{0.75cm}{>->}
+}
+
+\newcommand{\vsmallmono}[3]{
+\left(
+\vsmallmonox{#1}{#2}{#3}
+\right)
+}
+
+\newcommand{\ivsmallmono}[3]{
+\begin{math}
+\vsmallmono{#1}{#2}{#3}
+\end{math}
+}
+
+\newcommand{\vsmallinc}[2]{
+ \left(
+ \vsmallincx{#1}{#2}
+ \right)
+}
+
+\newcommand{\ivsmallincx}[2]{
+\begin{math}
+\vsmallincx{#1}{#2}
+\end{math}
+}
+
+\newcommand{\ivsmallinc}[2]{
+\begin{math}
+\vsmallinc{#1}{#2}
+\end{math}
+}
+
+\newcommand{\vmorphex}[5]{
+\vmorphexx{#1}{#2}{#3}{#4}{#5}{->}
+}
+
+\newcommand{\vmorphx}[3]{
+\vmorphex{#1}{#2}{#3}{\normalsize}{1cm}
+}
+
+\newcommand{\ivmorphx}[3]{
+\begin{math}
+\vmorphx{#1}{#2}{#3}
+\end{math}
+}
+
+\newcommand{\vmorph}[3]{
+\left(
+\vmorphex{#1}{#2}{#3}{\normalsize}{1cm}
+\right)
+}
+
+\newcommand{\ivmorph}[3]{
+\begin{math}
+\vmorph{#1}{#2}{#3}
+\end{math}
+}
+
+\newcommand{\smallvmorphx}[3]{
+\vmorphex{#1}{#2}{#3}{\scriptsize}{0.75cm}
+}
+
+\newcommand{\ismallvmorphx}[3]{
+\begin{math}
+\smallvmorphx{#1}{#2}{#3}
+\end{math}
+}
+
+\newcommand{\smallvmorph}[3]{
+\left(
+\smallvmorphx{#1}{#2}{#3}
+\right)
+}
+
+\newcommand{\ismallvmorph}[3]{
+\begin{math}
+\smallvmorph{#1}{#2}{#3}
+\end{math}
+}
+
+\newcommand{\adjunction}[4]{\adjunctionex{#1}{#2}{#3}{#4}{\bot}}
+\newcommand{\equivalence}[4]{\adjunctionex{#1}{#2}{#3}{#4}{\cong}}
+\newcommand{\dan}{Daniel Marsden}
+
+\newcommand{\restrictto}[2]{#1\lvert_{#2}}
+
+%End tikz stuff
+
+\ProcessOptions\relax
+
+%End standard macros
